@@ -119,7 +119,7 @@
       chat.appendChild(loading);
 
       try {
-        const res = await fetch("https://surfea-backend.vercel.app/api/chat", {
+        const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message })
@@ -127,9 +127,14 @@
 
         const data = await res.json();
 
+        if (!res.ok) {
+          loading.textContent = "Error backend: " + (data.error || res.status);
+          return;
+        }
+
         loading.textContent = data.reply || "Error al responder.";
       } catch (err) {
-        loading.textContent = "Error de conexión.";
+        loading.textContent = "Error de conexión: " + err.message;
       }
 
       chat.scrollTop = chat.scrollHeight;
