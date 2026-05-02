@@ -21,7 +21,7 @@ function isGreeting(msg) {
   return greetings.includes(msg.toLowerCase().trim());
 }
 
-// 🔥 NUEVO: función para extraer texto correctamente
+// 🔥 EXTRACTOR ROBUSTO (clave para evitar errores)
 function extractText(data) {
   if (data.output_text) return data.output_text;
 
@@ -31,6 +31,8 @@ function extractText(data) {
     return "";
   }
 }
+
+// 🔥 PROMPT NIVEL PRO
 const INSTRUCTIONS = `You are WeSurf AI, a high-level surf coach.
 
 Answer in the same language as the user.
@@ -76,6 +78,12 @@ If you don't find info in the knowledge base → still answer using general surf
 If useful, end with:
 "¿Querés que lo bajemos a algo más específico para tu nivel?"`;
 
+async function callOpenAI(message, useFileSearch = true) {
+  const body = {
+    model: "gpt-4.1-mini",
+    input: message,
+    instructions: INSTRUCTIONS,
+  };
 
   if (useFileSearch) {
     body.tools = [
@@ -101,7 +109,7 @@ If useful, end with:
     throw new Error(data.error?.message || "OpenAI API error");
   }
 
-  return extractText(data); // 🔥 FIX CLAVE
+  return extractText(data);
 }
 
 export default async function handler(req, res) {
@@ -135,16 +143,23 @@ export default async function handler(req, res) {
     // 🔥 intento con PDF
     try {
       reply = await callOpenAI(message, true);
+
+      // 🔥 si viene vacío o muy corto → fallback
+      if (!reply || reply.length < 10) {
+        reply = await callOpenAI(message, false);
+      }
+
     } catch (err) {
       console.error("File search failed, using fallback:", err.message);
 
-      // 🔥 fallback sin PDF
+      // 🔥 fallback directo
       reply = await callOpenAI(message, false);
     }
 
     return res.status(200).json({
       reply: cleanReply(reply),
     });
+
   } catch (error) {
     return res.status(500).json({
       error: error.message || "Server error",
