@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WeSurf AI Coach</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #000;
+      color: #fff;
+    }
+
+    .chat-container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      margin-bottom: 4px;
+      font-size: 28px;
+    }
+
+    .tagline {
+      color: #18d5e8;
+      margin-bottom: 24px;
+    }
+
+    .chat-box {
+      background: #0b0b0b;
+      border: 1px solid #222;
+      border-radius: 18px;
+      padding: 18px;
+      min-height: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .message {
+      padding: 14px 16px;
+      border-radius: 16px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      max-width: 85%;
+    }
+
+    .user {
+      align-self: flex-end;
+      background: #1f6fff;
+      color: white;
+    }
+
+    .bot {
+      align-self: flex-start;
+      background: #f2f2f2;
+      color: #111;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    input {
+      flex: 1;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 14px 20px;
+      border: none;
+      border-radius: 12px;
+      background: #18d5e8;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <h1>WeSurf AI Coach</h1>
+    <div class="tagline">From Surfers, For Surfers.</div>
+
+    <div id="chat" class="chat-box">
+      <div class="message bot">Hola, soy tu coach de WeSurf. ¿En qué querés mejorar hoy?</div>
+    </div>
+
+    <div class="input-row">
+      <input id="messageInput" placeholder="Escribí tu pregunta..." />
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("messageInput");
+      const chat = document.getElementById("chat");
+      const message = input.value.trim();
+
+      if (!message) return;
+
+      chat.innerHTML += `<div class="message user">${message}</div>`;
+      input.value = "";
+
+      const loading = document.createElement("div");
+      loading.className = "message bot";
+      loading.textContent = "Pensando...";
+      chat.appendChild(loading);
+
+      try {
+        const res = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message })
+        });
+
+        const data = await res.json();
+        loading.textContent = data.reply || data.error || "Error al responder.";
+      } catch (err) {
+        loading.textContent = "Error de conexión.";
+      }
+
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    document.getElementById("messageInput").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") sendMessage();
+    });
+  </script>
+</body>
+</html>
