@@ -1,15 +1,9 @@
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 const VECTOR_STORE_ID = "vs_69f55071d4a081919a1c913bc2f9d9d7";
 
 function setCors(res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 
 function cleanReply(text) {
@@ -53,16 +47,22 @@ export default async function handler(req, res) {
       });
     }
 
-    const response = await openai.responses.create({
-      model: "gpt-4.1-mini",
-      input: message,
-      tools: [
-        {
-          type: "file_search",
-          vector_store_ids: [VECTOR_STORE_ID],
-        },
-      ],
-      instructions: `You are WeSurf AI, a professional surf coach.
+    const openaiRes = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4.1-mini",
+        input: message,
+        tools: [
+          {
+            type: "file_search",
+            vector_store_ids: [VECTOR_STORE_ID],
+          },
+        ],
+        instructions: `You are WeSurf AI, a professional surf coach.
 
 Answer in the same language as the user.
 
@@ -89,14 +89,21 @@ If the question is unclear, ask one simple follow-up question.
 
 If useful, end with:
 "¿Querés que lo veamos más en detalle?"`,
+      }),
     });
+
+    const data = await openaiRes.json();
+
+    if (!openaiRes.ok) {
+      return res.status(openaiRes.status).json({
+        error: data.error?.message || "OpenAI API error",
+      });
+    }
 
     return res.status(200).json({
-      reply: cleanReply(response.output_text),
+      reply: cleanReply(data.output_text),
     });
   } catch (error) {
-    console.error("API ERROR:", error);
-
     return res.status(500).json({
       error: error.message || "Server error",
     });
