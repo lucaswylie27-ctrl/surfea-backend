@@ -120,11 +120,29 @@ En la próxima sesión, hacé 5 olas solo buscando subir al lip y bajar con cont
 End only if useful with:
 "Si querés, lo afinamos según tu nivel, tabla y tipo de ola."`;
 
-async function callOpenAI(message, useFileSearch = true) {
+function buildProfileContext(userProfile) {
+  if (!userProfile) return "";
+
+  return `User profile:
+- Level: ${userProfile.level || "unknown"}
+- Board: ${userProfile.board || "unknown"}
+- Waves: ${userProfile.waves || "unknown"}
+
+Adapt every answer to this surfer profile.
+Do not give beginner-level advice to intermediate or advanced surfers.
+Do not give longboard advice unless the user uses a longboard.
+Make drills realistic for the user's board and wave type.
+
+`;
+}
+
+async function callOpenAI(message, userProfile, useFileSearch = true) {
+  const profileContext = buildProfileContext(userProfile);
+
   const body = {
     model: "gpt-4.1-mini",
     input: message,
-    instructions: INSTRUCTIONS,
+    instructions: profileContext + INSTRUCTIONS,
   };
 
   if (useFileSearch) {
@@ -168,7 +186,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message } = req.body || {};
+    const { message, userProfile } = req.body || {};
 
     if (!message) {
       return res.status(400).json({ error: "Missing message" });
@@ -183,14 +201,14 @@ export default async function handler(req, res) {
     let reply = "";
 
     try {
-      reply = await callOpenAI(message, true);
+      reply = await callOpenAI(message, userProfile, true);
 
       if (!reply || reply.length < 10) {
-        reply = await callOpenAI(message, false);
+        reply = await callOpenAI(message, userProfile, false);
       }
     } catch (err) {
       console.error("File search failed, using fallback:", err.message);
-      reply = await callOpenAI(message, false);
+      reply = await callOpenAI(message, userProfile, false);
     }
 
     return res.status(200).json({
