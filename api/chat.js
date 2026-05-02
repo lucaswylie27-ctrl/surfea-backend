@@ -6,6 +6,12 @@ const openai = new OpenAI({
 
 const VECTOR_STORE_ID = "vs_69f55071d4a081919a1c913bc2f9d9d7";
 
+function setCors(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+}
+
 function cleanReply(text) {
   if (!text) return "";
   return text
@@ -22,6 +28,12 @@ function isGreeting(msg) {
 }
 
 export default async function handler(req, res) {
+  setCors(res);
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   if (req.method !== "POST") {
     return res.status(200).json({
       message: "WeSurf backend is working.",
@@ -64,8 +76,6 @@ Sound human, professional and friendly.
 Do not sound robotic.
 Do not sound like a surfer bro.
 
-If the user only greets you, answer naturally and do not give coaching advice.
-
 For real surf questions:
 - Start with 1 short natural sentence.
 - Then give 2 to 4 short practical points.
@@ -85,6 +95,8 @@ If useful, end with:
       reply: cleanReply(response.output_text),
     });
   } catch (error) {
+    console.error("API ERROR:", error);
+
     return res.status(500).json({
       error: error.message || "Server error",
     });
