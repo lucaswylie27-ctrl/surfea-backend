@@ -4,11 +4,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// 🔥 PEGÁ ACÁ TU VECTOR STORE ID
-const VECTOR_STORE_ID = "vs_69f5507d4a081..."; // <-- reemplazar
+// ✅ TU VECTOR STORE REAL
+const VECTOR_STORE_ID = "vs_69f55071d4a081919a1c913bc2f9d9d7";
 
 export default async function handler(req, res) {
-  // 🔹 Para testear en el navegador
+  // 🔹 Para testear desde navegador
   if (req.method !== "POST") {
     return res.status(200).json({
       message: "WeSurf backend is working. Send a POST request with { message }.",
@@ -24,7 +24,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 🔥 RESPUESTA CON TU KNOWLEDGE BASE
+    // 🔥 RESPUESTA USANDO TU KNOWLEDGE BASE
     const response = await openai.responses.create({
       model: "gpt-4.1-mini",
 
