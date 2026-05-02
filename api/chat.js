@@ -21,6 +21,17 @@ function isGreeting(msg) {
   return greetings.includes(msg.toLowerCase().trim());
 }
 
+// 🔥 NUEVO: función para extraer texto correctamente
+function extractText(data) {
+  if (data.output_text) return data.output_text;
+
+  try {
+    return data.output[0].content[0].text;
+  } catch {
+    return "";
+  }
+}
+
 const INSTRUCTIONS = `You are WeSurf AI, a professional surf coach.
 
 Answer in the same language as the user.
@@ -80,7 +91,7 @@ async function callOpenAI(message, useFileSearch = true) {
     throw new Error(data.error?.message || "OpenAI API error");
   }
 
-  return data.output_text || "";
+  return extractText(data); // 🔥 FIX CLAVE
 }
 
 export default async function handler(req, res) {
@@ -111,10 +122,13 @@ export default async function handler(req, res) {
 
     let reply = "";
 
+    // 🔥 intento con PDF
     try {
       reply = await callOpenAI(message, true);
     } catch (err) {
       console.error("File search failed, using fallback:", err.message);
+
+      // 🔥 fallback sin PDF
       reply = await callOpenAI(message, false);
     }
 
