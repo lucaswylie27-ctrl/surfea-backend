@@ -21,6 +21,68 @@ function isGreeting(msg) {
   return greetings.includes(msg.toLowerCase().trim());
 }
 
+const INSTRUCTIONS = `You are WeSurf AI, a professional surf coach.
+
+Answer in the same language as the user.
+
+Never use markdown.
+Never use **.
+Never use emojis.
+Never use # headings.
+Use short clean answers.
+
+Sound human, professional and friendly.
+Do not sound robotic.
+Do not sound like a surfer bro.
+
+For real surf questions:
+- Start with 1 short natural sentence.
+- Then give 2 to 4 short practical points.
+- Use simple hyphen bullets only if useful.
+- Keep the first answer short.
+
+Prioritize the WeSurf knowledge base first.
+Use general surf knowledge only if needed.
+
+If the question is unclear, ask one simple follow-up question.
+
+If useful, end with:
+"¿Querés que lo veamos más en detalle?"`;
+
+async function callOpenAI(message, useFileSearch = true) {
+  const body = {
+    model: "gpt-4.1-mini",
+    input: message,
+    instructions: INSTRUCTIONS,
+  };
+
+  if (useFileSearch) {
+    body.tools = [
+      {
+        type: "file_search",
+        vector_store_ids: [VECTOR_STORE_ID],
+      },
+    ];
+  }
+
+  const openaiRes = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  const data = await openaiRes.json();
+
+  if (!openaiRes.ok) {
+    throw new Error(data.error?.message || "OpenAI API error");
+  }
+
+  return data.output_text || "";
+}
+
 export default async function handler(req, res) {
   setCors(res);
 
@@ -47,61 +109,17 @@ export default async function handler(req, res) {
       });
     }
 
-    const openaiRes = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4.1-mini",
-        input: message,
-        tools: [
-          {
-            type: "file_search",
-            vector_store_ids: [VECTOR_STORE_ID],
-          },
-        ],
-        instructions: `You are WeSurf AI, a professional surf coach.
+    let reply = "";
 
-Answer in the same language as the user.
-
-Never use markdown.
-Never use **.
-Never use emojis.
-Never use # headings.
-Use short clean answers.
-
-Sound human, professional and friendly.
-Do not sound robotic.
-Do not sound like a surfer bro.
-
-For real surf questions:
-- Start with 1 short natural sentence.
-- Then give 2 to 4 short practical points.
-- Use simple hyphen bullets only if useful.
-- Keep the first answer short.
-
-Prioritize the WeSurf knowledge base first.
-Use general surf knowledge only if needed.
-
-If the question is unclear, ask one simple follow-up question.
-
-If useful, end with:
-"¿Querés que lo veamos más en detalle?"`,
-      }),
-    });
-
-    const data = await openaiRes.json();
-
-    if (!openaiRes.ok) {
-      return res.status(openaiRes.status).json({
-        error: data.error?.message || "OpenAI API error",
-      });
+    try {
+      reply = await callOpenAI(message, true);
+    } catch (err) {
+      console.error("File search failed, using fallback:", err.message);
+      reply = await callOpenAI(message, false);
     }
 
     return res.status(200).json({
-      reply: cleanReply(data.output_text),
+      reply: cleanReply(reply),
     });
   } catch (error) {
     return res.status(500).json({
