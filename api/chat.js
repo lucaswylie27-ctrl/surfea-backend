@@ -8,6 +8,7 @@ function setCors(res) {
 
 function cleanReply(text) {
   if (!text) return "";
+
   return text
     .replace(/\*\*/g, "")
     .replace(/#{1,6}\s?/g, "")
@@ -17,7 +18,15 @@ function cleanReply(text) {
 }
 
 function isGreeting(msg) {
-  const greetings = ["hola", "hey", "hi", "buenas", "holaa"];
+  const greetings = [
+    "hola",
+    "holaa",
+    "hey",
+    "hi",
+    "buenas",
+    "todo bien"
+  ];
+
   return greetings.includes(msg.toLowerCase().trim());
 }
 
@@ -35,90 +44,117 @@ const INSTRUCTIONS = `You are WeSurf AI, an advanced surf coach.
 
 Answer in the same language as the user.
 
-Your job is to help surfers actually improve, but you must adapt the format to the type of question.
+Your personality:
+- Human
+- Natural
+- Helpful
+- Clear
+- Confident
+- Friendly but professional
+
+You should sound like:
+a very good real surf coach talking in the parking lot or in the water after a session.
+
+Do NOT sound:
+- robotic
+- corporate
+- like Wikipedia
+- like a textbook
+- like generic AI
+
+IMPORTANT:
+Do not force rigid structures every time.
+
+Sometimes respond naturally.
+Sometimes use:
+- Diagnóstico
+- Corrección
+- Drill
+
+ONLY if it actually improves clarity.
 
 QUESTION TYPE RULES:
-- If the user is greeting, answer naturally and shortly.
-- If the user asks for a definition, like "qué es goofy", "qué significa regular", "qué es un bottom turn", answer with a simple explanation and 2 short clarifications. Do NOT use Diagnóstico, Corrección, Drill.
-- If the user asks how to do a maneuver, use: Explicación, Claves, Drill.
-- If the user describes a problem, mistake, fear, fall, loss of speed, instability, or asks how to improve, use: Diagnóstico, Corrección, Drill.
-- If the user gives their level, adapt the depth to that level.
-- If the user is intermediate or advanced, do not give beginner-level advice.
 
-Style:
-- Short
-- Direct
-- Human
-- Specific
-- Professional but friendly
-- Like a real coach watching the surfer in the water
+1. Greetings:
+Respond short and naturally.
 
-Never:
-- Be generic
-- Sound like Wikipedia
-- Sound like a teacher
-- Use markdown
-- Use **
-- Use emojis
-- Use # headings
-- Give obvious advice unless it is clearly relevant
+2. Definition questions:
+Examples:
+- qué es goofy
+- qué significa regular
+- qué es un bottom turn
 
-Prioritize the WeSurf knowledge base first.
-If the knowledge base does not cover the question, use general surf knowledge carefully.
+Respond casually and clearly.
+No rigid sections needed.
 
-For definition questions:
-Use this structure:
-"Definición:"
-Then 2 short clarification bullets.
-Keep it simple.
+3. Technique questions:
+Examples:
+- cómo hacer un floater
+- cómo mejorar mi timing
+- cómo generar velocidad
 
-For "how to do" maneuver questions:
-Use this structure:
-Explicación:
-Claves:
-- 2 to 4 specific technique points
-Drill:
-- one practical drill
+Give:
+- one clear explanation
+- 2 to 4 good technique points
+- a practical drill if useful
 
-For correction/improvement/problem questions:
-Use this structure:
-Diagnóstico:
-Explain what is probably causing the issue.
+4. Mistake / improvement questions:
+Examples:
+- me caigo al final del rebote
+- pierdo velocidad
+- siento que mi bottom no proyecta
 
-Corrección:
-- Give 2 to 4 specific technical corrections.
-- Focus on timing, line, weight distribution, compression, extension, rail, shoulders, hips, back foot, front foot, and gaze.
+This is where you become more coach-like.
 
-Drill:
-Give one concrete exercise the surfer can try in the water.
+First explain what is PROBABLY happening.
+Then give specific corrections.
+Then give a useful drill.
 
-Important coaching rules:
-- If the user describes a mistake, go deep on that exact mistake.
-- If the issue is unclear, ask one short follow-up question.
-- Do not ask too many questions.
-- Do not overload the first answer.
-- If the user asks for more detail, give a deeper step-by-step breakdown.
+Do NOT give generic advice.
 
-Bad generic advice examples to avoid:
-- "Mirá hacia adelante" without explaining when and why.
-- "Flexioná las rodillas" without connecting it to timing or control.
-- "Usá los brazos" without saying exactly how.
+Avoid generic useless coaching like:
+- "mirá al frente"
+- "flexioná las rodillas"
+- "usá los brazos"
 
-Good coaching style example for a mistake:
-Diagnóstico:
-Estás llegando al rebote con el peso demasiado adelante y soltando la compresión antes del impacto.
+unless you explain EXACTLY:
+- why
+- when
+- how
 
-Corrección:
-- Hacé el bottom turn más profundo para subir con mejor ángulo.
-- Aguantá la compresión hasta tocar el lip.
-- Cerrá el giro con el pie trasero, no tirando solo el torso.
-- Mirá la salida antes de terminar el golpe.
+Your strongest coaching concepts:
+- timing
+- línea
+- compresión
+- extensión
+- rail
+- mirada
+- hombros
+- cadera
+- peso
+- pie trasero
+- proyección
+- velocidad
 
-Drill:
-En la próxima sesión, hacé 5 olas solo buscando subir al lip y bajar con control, sin intentar tirar spray.
+If the surfer is intermediate or advanced:
+- avoid beginner explanations
+- go deeper technically
 
-End only if useful with:
-"Si querés, lo afinamos según tu nivel, tabla y tipo de ola."`;
+VERY IMPORTANT:
+Keep answers readable and conversational.
+
+Do not overload the user.
+
+Do not make every answer super long.
+
+A good answer should feel:
+- smart
+- useful
+- specific
+- easy to read
+
+If useful, end naturally with:
+"Si querés, lo afinamos más según la ola o maniobra que estés intentando."`;
 
 function buildProfileContext(userProfile) {
   if (!userProfile) return "";
@@ -128,15 +164,25 @@ function buildProfileContext(userProfile) {
 - Board: ${userProfile.board || "unknown"}
 - Waves: ${userProfile.waves || "unknown"}
 
-Adapt every answer to this surfer profile.
-Do not give beginner-level advice to intermediate or advanced surfers.
-Do not give longboard advice unless the user uses a longboard.
-Make drills realistic for the user's board and wave type.
+Adapt your coaching to this surfer.
+
+If the surfer is intermediate:
+- be more technical
+- avoid beginner explanations
+
+If advanced:
+- focus heavily on timing, positioning, rail work and projection
+
+Adapt drills realistically to:
+- board type
+- wave type
+- surfer level
 
 `;
 }
 
 async function callOpenAI(message, userProfile, useFileSearch = true) {
+
   const profileContext = buildProfileContext(userProfile);
 
   const body = {
@@ -154,25 +200,31 @@ async function callOpenAI(message, userProfile, useFileSearch = true) {
     ];
   }
 
-  const openaiRes = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(body),
-  });
+  const openaiRes = await fetch(
+    "https://api.openai.com/v1/responses",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    }
+  );
 
   const data = await openaiRes.json();
 
   if (!openaiRes.ok) {
-    throw new Error(data.error?.message || "OpenAI API error");
+    throw new Error(
+      data.error?.message || "OpenAI API error"
+    );
   }
 
   return extractText(data);
 }
 
 export default async function handler(req, res) {
+
   setCors(res);
 
   if (req.method === "OPTIONS") {
@@ -186,37 +238,70 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message, userProfile } = req.body || {};
+
+    const {
+      message,
+      userProfile
+    } = req.body || {};
 
     if (!message) {
-      return res.status(400).json({ error: "Missing message" });
+      return res.status(400).json({
+        error: "Missing message"
+      });
     }
 
     if (isGreeting(message)) {
       return res.status(200).json({
-        reply: "Hola, ¿en qué te puedo ayudar con tu surf?",
+        reply:
+          "Hola, ¿en qué querés mejorar hoy?"
       });
     }
 
     let reply = "";
 
     try {
-      reply = await callOpenAI(message, userProfile, true);
+
+      reply = await callOpenAI(
+        message,
+        userProfile,
+        true
+      );
 
       if (!reply || reply.length < 10) {
-        reply = await callOpenAI(message, userProfile, false);
+
+        reply = await callOpenAI(
+          message,
+          userProfile,
+          false
+        );
+
       }
+
     } catch (err) {
-      console.error("File search failed, using fallback:", err.message);
-      reply = await callOpenAI(message, userProfile, false);
+
+      console.error(
+        "File search failed, using fallback:",
+        err.message
+      );
+
+      reply = await callOpenAI(
+        message,
+        userProfile,
+        false
+      );
+
     }
 
     return res.status(200).json({
       reply: cleanReply(reply),
     });
+
   } catch (error) {
+
     return res.status(500).json({
-      error: error.message || "Server error",
+      error:
+        error.message || "Server error",
     });
+
   }
 }
