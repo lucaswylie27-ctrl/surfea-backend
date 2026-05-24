@@ -21,12 +21,43 @@
 
     h1 {
       margin-bottom: 4px;
-      font-size: 28px;
+      font-size: 32px;
     }
 
     .tagline {
       color: #18d5e8;
       margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .profile-box {
+      background: #0f0f0f;
+      border: 1px solid #222;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 18px;
+    }
+
+    .profile-title {
+      margin-bottom: 12px;
+      font-weight: bold;
+      color: #18d5e8;
+    }
+
+    .selectors {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    select {
+      background: #1a1a1a;
+      color: white;
+      border: 1px solid #333;
+      padding: 10px;
+      border-radius: 10px;
+      flex: 1;
+      min-width: 140px;
     }
 
     .chat-box {
@@ -44,7 +75,7 @@
     .message {
       padding: 14px 16px;
       border-radius: 16px;
-      line-height: 1.5;
+      line-height: 1.6;
       white-space: pre-wrap;
       max-width: 85%;
     }
@@ -84,65 +115,152 @@
       font-weight: bold;
       cursor: pointer;
     }
+
+    .helper-text {
+      margin-top: 12px;
+      color: #888;
+      font-size: 14px;
+    }
   </style>
 </head>
 
 <body>
   <div class="chat-container">
+
     <h1>WeSurf AI Coach</h1>
-    <div class="tagline">From Surfers, For Surfers.</div>
+
+    <div class="tagline">
+      From Surfers, For Surfers.<br>
+      Tu compañero de surf con IA para mejorar tu técnica, entrenar mejor y encontrar mejores olas.
+    </div>
+
+    <div class="profile-box">
+      <div class="profile-title">Tu perfil de surf</div>
+
+      <div class="selectors">
+
+        <select id="level">
+          <option value="beginner">Beginner</option>
+          <option value="intermediate" selected>Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+
+        <select id="board">
+          <option value="shortboard" selected>Shortboard</option>
+          <option value="fish">Fish</option>
+          <option value="longboard">Longboard</option>
+          <option value="midlength">Midlength</option>
+        </select>
+
+        <select id="waves">
+          <option value="beach break" selected>Beach Break</option>
+          <option value="point break">Point Break</option>
+          <option value="reef break">Reef Break</option>
+          <option value="small waves">Small Waves</option>
+        </select>
+
+      </div>
+
+      <div class="helper-text">
+        WeSurf adapta las respuestas según tu nivel, tabla y tipo de ola.
+      </div>
+    </div>
 
     <div id="chat" class="chat-box">
-      <div class="message bot">Hola, soy tu coach de WeSurf. ¿En qué querés mejorar hoy?</div>
+      <div class="message bot">
+Hola, soy tu coach de WeSurf.
+¿En qué querés mejorar hoy?
+      </div>
     </div>
 
     <div class="input-row">
       <input id="messageInput" placeholder="Escribí tu pregunta..." />
       <button onclick="sendMessage()">Send</button>
     </div>
+
   </div>
 
   <script>
+
     async function sendMessage() {
+
       const input = document.getElementById("messageInput");
       const chat = document.getElementById("chat");
+
+      const level = document.getElementById("level").value;
+      const board = document.getElementById("board").value;
+      const waves = document.getElementById("waves").value;
+
       const message = input.value.trim();
 
       if (!message) return;
 
-      chat.innerHTML += `<div class="message user">${message}</div>`;
+      chat.innerHTML += `
+        <div class="message user">${message}</div>
+      `;
+
       input.value = "";
 
       const loading = document.createElement("div");
+
       loading.className = "message bot";
       loading.textContent = "Pensando...";
+
       chat.appendChild(loading);
 
       try {
+
         const res = await fetch("/api/chat", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message })
+          headers: {
+            "Content-Type": "application/json"
+          },
+
+          body: JSON.stringify({
+            message,
+
+            userProfile: {
+              level,
+              board,
+              waves
+            }
+
+          })
+
         });
 
         const data = await res.json();
 
         if (!res.ok) {
-          loading.textContent = "Error backend: " + (data.error || res.status);
+          loading.textContent =
+            "Error backend: " + (data.error || res.status);
           return;
         }
 
-        loading.textContent = data.reply || "Error al responder.";
+        loading.textContent =
+          data.reply || "Error al responder.";
+
       } catch (err) {
-        loading.textContent = "Error de conexión: " + err.message;
+
+        loading.textContent =
+          "Error de conexión: " + err.message;
+
       }
 
       chat.scrollTop = chat.scrollHeight;
     }
 
-    document.getElementById("messageInput").addEventListener("keydown", function(e) {
-      if (e.key === "Enter") sendMessage();
-    });
+    document
+      .getElementById("messageInput")
+      .addEventListener("keydown", function(e) {
+
+        if (e.key === "Enter") {
+          sendMessage();
+        }
+
+      });
+
   </script>
+
 </body>
 </html>
